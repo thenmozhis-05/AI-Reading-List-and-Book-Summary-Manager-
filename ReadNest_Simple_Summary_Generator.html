@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReadNest - Book Summary Manager</title>
+<style>
+:root{--bg:#f6f5fb;--card:#fff;--ink:#24233a;--muted:#77758c;--purple:#6c5ce7;--pale:#eeeaff;--line:#eceaf4;--green:#218a62}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(120deg,#5145cd,#8b78f5);color:white;padding:25px 18px 32px}.wrap{max-width:1000px;margin:auto}.brand{font-size:22px;font-weight:800}.hero h1{font-size:clamp(26px,5vw,38px);margin:22px 0 8px}.hero p{margin:0;line-height:1.5;color:#efedff}
+main{max-width:1000px;margin:auto;padding:18px 16px 30px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}.stat,.panel{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:16px;box-shadow:0 5px 20px #29205a08}.stat span{font-size:12px;color:var(--muted)}.stat strong{display:block;font-size:26px;margin-top:6px}
+.layout{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}.panel h2{font-size:18px;margin:0 0 15px}.field{margin-bottom:12px}.field label{display:block;font-size:12px;font-weight:bold;margin-bottom:6px;color:#55536b}.field input,.field textarea,.search{width:100%;border:1px solid #dedbea;background:#fdfcff;border-radius:10px;padding:11px 12px;font:inherit;font-size:14px;color:var(--ink)}.field textarea{min-height:92px;resize:vertical}.btn{border:0;border-radius:10px;padding:11px 13px;background:var(--purple);color:white;font-weight:bold;cursor:pointer}.btn.secondary{background:var(--pale);color:var(--purple)}.btn.small{padding:7px 10px;font-size:12px}.actions{display:flex;gap:8px;flex-wrap:wrap}.hint{font-size:11px;line-height:1.5;color:var(--muted)}.output{background:#f8f7ff;border:1px dashed #c9c1ff;border-radius:10px;padding:11px;font-size:13px;line-height:1.5;white-space:pre-wrap;margin:10px 0}.listhead{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:13px}.listhead h2{margin:0}.search{max-width:220px}.filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.filter{border:1px solid var(--line);background:white;border-radius:20px;padding:7px 11px;font-size:12px;color:var(--muted)}.filter.active{background:var(--pale);color:var(--purple);font-weight:bold}.book{border:1px solid var(--line);border-radius:13px;padding:13px;margin-bottom:10px;display:grid;grid-template-columns:43px 1fr;gap:11px}.cover{height:54px;border-radius:9px;background:linear-gradient(145deg,#d8d1ff,#8c7bf0);display:grid;place-items:center;font-size:23px}.book h3{margin:0 0 4px;font-size:15px}.author{font-size:12px;color:var(--muted)}.status{display:inline-block;font-size:11px;padding:5px 8px;border-radius:20px;background:#fff1d7;color:#94650a;margin-top:6px}.status.read{background:#e0f7ed;color:var(--green)}.summary{font-size:13px;line-height:1.5;color:#5e5b72;margin:8px 0}.bookactions{display:flex;gap:7px;flex-wrap:wrap}.empty{text-align:center;padding:30px 8px;color:var(--muted)}.foot{text-align:center;color:var(--muted);font-size:11px;margin-top:18px}
+@media(max-width:740px){.layout{grid-template-columns:1fr}.listhead{align-items:stretch;flex-direction:column}.search{max-width:none}.stat{padding:12px}.stat strong{font-size:22px}}
+</style></head>
+<body>
+<header><div class="wrap"><div class="brand">📚 ReadNest</div><div class="hero"><h1>Make time for great stories.</h1><p>Organise your reading list, create short summaries, and track your reading progress.</p></div></div></header>
+<main>
+<section class="stats"><div class="stat"><span>Total books</span><strong id="total">0</strong></div><div class="stat"><span>Read</span><strong id="readCount">0</strong></div><div class="stat"><span>To read</span><strong id="todoCount">0</strong></div></section>
+<div class="layout">
+<section class="panel"><h2>＋ Add a book</h2>
+<form id="form">
+<div class="field"><label for="title">BOOK TITLE *</label><input id="title" required placeholder="e.g. Atomic Habits"></div>
+<div class="field"><label for="author">AUTHOR</label><input id="author" placeholder="e.g. James Clear"></div>
+<div class="field"><label for="source">BOOK TEXT OR NOTES</label><textarea id="source" placeholder="Paste a paragraph or your notes here..."></textarea></div>
+<div class="actions"><button class="btn" type="button" id="generate">✨ Generate summary</button></div>
+<div class="field" style="margin-top:12px"><label for="summaryOut">GENERATED SUMMARY</label><textarea id="summaryOut" placeholder="Your short summary will appear here..."></textarea></div>
+<div class="actions"><button class="btn" type="submit">Save book</button><button class="btn secondary" type="reset">Clear</button></div>
+</form>
+<p class="hint">Simple demo: the summary is created on your device from the text or notes you enter. It does not call a real AI service.</p>
+</section>
+<section class="panel"><div class="listhead"><h2>My reading list</h2><input class="search" id="search" placeholder="Search books..."></div>
+<div class="filters"><button class="filter active" data-filter="All">All books</button><button class="filter" data-filter="To Read">To read</button><button class="filter" data-filter="Read">Read</button></div><div id="books"></div>
+</section></div><div class="foot">ReadNest • AI Reading List & Book Summary Manager • Student project demo</div>
+</main>
+<script>
+const KEY="readnest_books_v1";let books=[];try{books=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){books=[]}let currentFilter="All";const $=id=>document.getElementById(id);
+function makeSummary(text,title){
+ text=text.trim().replace(/\s+/g," ");
+ if(!text)return "Please paste some book text or notes first, then tap Generate summary.";
+ const sentences=text.match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[text];
+ let result=sentences.map(s=>s.trim()).filter(Boolean).slice(0,3).join(" ");
+ if(result.length>420)result=result.slice(0,417).replace(/\s+\S*$/,"")+"...";
+ if(result.length<60 && text.split(/\s+/).length>35)result=text.split(/\s+/).slice(0,45).join(" ")+"...";
+ return "Summary of "+(title.trim()||"this book")+": "+result;
+}
+$("generate").addEventListener("click",()=>{$("summaryOut").value=makeSummary($("source").value,$("title").value)});
+function save(){localStorage.setItem(KEY,JSON.stringify(books));render()}
+function render(){
+ $("total").textContent=books.length;$("readCount").textContent=books.filter(b=>b.status==="Read").length;$("todoCount").textContent=books.filter(b=>b.status!=="Read").length;
+ const q=$("search").value.trim().toLowerCase();const visible=books.filter(b=>(currentFilter==="All"||b.status===currentFilter)&&(b.title+" "+b.author+" "+b.summary).toLowerCase().includes(q));const root=$("books");root.innerHTML="";
+ if(!visible.length){root.innerHTML='<div class="empty">📖<br><b>Your shelf is waiting</b><p>Add a book to start your reading list.</p></div>';return}
+ visible.forEach(b=>{const idx=books.findIndex(x=>x.id===b.id);const article=document.createElement("article");article.className="book";const cover=document.createElement("div");cover.className="cover";cover.textContent="📘";const content=document.createElement("div");const h=document.createElement("h3");h.textContent=b.title;const author=document.createElement("div");author.className="author";author.textContent=b.author?"by "+b.author:"Author not added";const status=document.createElement("span");status.className="status"+(b.status==="Read"?" read":"");status.textContent=b.status;const summary=document.createElement("p");summary.className="summary";summary.textContent=b.summary||"No summary added yet.";const actions=document.createElement("div");actions.className="bookactions";const toggle=document.createElement("button");toggle.className="btn secondary small";toggle.textContent=b.status==="Read"?"Mark to read":"Mark as read";toggle.onclick=()=>{books[idx].status=b.status==="Read"?"To Read":"Read";save()};const del=document.createElement("button");del.className="btn secondary small";del.textContent="Delete";del.onclick=()=>{if(confirm("Delete this book?")){books=books.filter(x=>x.id!==b.id);save()}};actions.append(toggle,del);content.append(h,author,status,summary,actions);article.append(cover,content);root.append(article)})
+}
+$("form").addEventListener("submit",e=>{e.preventDefault();const title=$("title").value.trim();if(!title)return;books.unshift({id:Date.now(),title,author:$("author").value.trim(),summary:$("summaryOut").value.trim(),status:"To Read"});save();e.target.reset()});
+$("search").addEventListener("input",render);document.querySelectorAll(".filter").forEach(btn=>btn.addEventListener("click",()=>{currentFilter=btn.dataset.filter;document.querySelectorAll(".filter").forEach(x=>x.classList.toggle("active",x===btn));render()}));
+$("form").addEventListener("reset",()=>setTimeout(()=>{$("summaryOut").value=""},0));render();
+</script></body></html>
